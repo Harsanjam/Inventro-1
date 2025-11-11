@@ -216,11 +216,11 @@ Goal: Finalize advanced features, testing, and documentation for delivery.
 
 - Finalize role-based permissions and refine error handling.
 
-### Member C - System Architecture (Shubham):
+### Member C - System Architecture (Alex):
 
 - Validate data persistence, backup, and restore workflows.
 
-### Member D - DevOps (Alex):
+### Member D - DevOps (Shubham):
 
 - Verify monitoring, metrics, and alert triggers.  
 - Ensure CI/CD auto-deploys to production cluster without manual steps.
