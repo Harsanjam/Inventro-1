@@ -18,8 +18,10 @@
         <a class="menu-link active" href="/inventory"><i class="bi bi-archive"></i> Inventory</a>
 
         {# Only staff / admins can see Add Item #}
-        {% if user.is_authenticated and (user.is_staff or user.is_superuser) %}
-          <a class="menu-link" href="add-item.html"><i class="bi bi-plus-circle"></i> Add Item</a>
+        {% if user.is_authenticated %}
+          {% if user.is_staff or user.is_superuser %}
+            <a class="menu-link" href="add-item.html"><i class="bi bi-plus-circle"></i> Add Item</a>
+          {% endif %}
         {% endif %}
 
         {# Only admins can see Analytics #}
@@ -69,10 +71,12 @@
               <i class="bi bi-speedometer2 me-1"></i>Dashboard
             </a>
             {# Only staff / admins see Add Item button #}
-            {% if user.is_authenticated and (user.is_staff or user.is_superuser) %}
-              <a class="btn btn-primary btn-sm" href="add-item.html">
-                <i class="bi bi-plus-circle me-1"></i>Add Item
-              </a>
+            {% if user.is_authenticated %}
+              {% if user.is_staff or user.is_superuser %}
+                <a class="btn btn-primary btn-sm" href="add-item.html">
+                  <i class="bi bi-plus-circle me-1"></i>Add Item
+                </a>
+              {% endif %}
             {% endif %}
           </div>
         </div>
