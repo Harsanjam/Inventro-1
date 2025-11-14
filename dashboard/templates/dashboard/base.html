@@ -20,7 +20,7 @@
         {# Only staff / admins can see Add Item #}
         {% if user.is_authenticated %}
           {% if user.is_staff or user.is_superuser %}
-            <a class="menu-link" href="/add-item"><i class="bi bi-plus-circle"></i> Add Item</a>
+            <a class="menu-link" href="/add_item"><i class="bi bi-plus-circle"></i> Add Item</a>
           {% endif %}
         {% endif %}
 

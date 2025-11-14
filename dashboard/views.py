@@ -10,6 +10,14 @@ def inventory(request):
     # Inventory overview page
     return render(request, "dashboard/inventory.html")
 
+def analytics(request):
+    # Analytics overview page
+    return render(request, "dashboard/analytics.html")
+
+def add_item(request):
+    # Add items page
+    return render(request, "dashboard/add_item.html")
+
 def intro(request):
     """
     Render a simple introduction/landing page.
