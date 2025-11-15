@@ -18,8 +18,14 @@ COPY requirements.txt .
 RUN pip install --upgrade pip \
  && pip install --no-cache-dir -r requirements.txt
 
-# Copy app
+# Copy app code
 COPY . .
+
+# --- FIX FOR entrypoint.sh PERMISSIONS ---
+# Copy the entrypoint script and make it executable while still running as root.
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+# -----------------------------------------
 
 # Create non-root user
 RUN useradd -m appuser && chown -R appuser:appuser /app
