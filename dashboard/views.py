@@ -3,6 +3,7 @@ from django.shortcuts import render
 from cart.models import Cart
 from inventory.models import Item
 from django.core.paginator import Paginator
+from django.shortcuts import get_object_or_404
 
 def index(request):
     # Original dashboard page
@@ -25,15 +26,12 @@ def analytics(request):
     return render(request, "dashboard/analytics.html")
 
 def add_item(request):
-    item_id = request.body["item_id"]
-    edit_item = True if item_id else False
-    
-    if edit_item:
-        item = Item.objects.get(id=item_id)
-        return render(request, "dashboard/item_form.html", { "edit_item": edit_item, "item": item })
-        
-    return render(request, "dashboard/item_form.html", { "edit_item": edit_item })
+    return render(request, "dashboard/item_form.html")
 
+def edit_item(request, item):
+    item = get_object_or_404(Item, id=item)
+    return render(request, "dashboard/item_form.html", { "item": item })
+    
 def intro(request):
     """
     Render a simple introduction/landing page.

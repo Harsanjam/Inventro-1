@@ -29,6 +29,7 @@ class Item(models.Model):
         ItemCategory,
         on_delete=models.PROTECT
     )
+    description = models.TextField(null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
