@@ -21,10 +21,6 @@ RUN pip install --upgrade pip \
 # Copy app
 COPY inventro .
 
-# Create non-root user
-RUN useradd -m appuser && chown -R appuser:appuser /app
-USER appuser
-
 EXPOSE 8000
 
 CMD ["gunicorn", "inventro.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
