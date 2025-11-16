@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from cart.models import Cart
-from inventory.models import Item
+from inventory.models import Item, ItemCategory
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
 
@@ -26,11 +26,13 @@ def analytics(request):
     return render(request, "dashboard/analytics.html")
 
 def add_item(request):
-    return render(request, "dashboard/item_form.html")
+    categories = ItemCategory.objects.all()
+    return render(request, "dashboard/item_form.html", {"categories": categories})
 
 def edit_item(request, item):
     item = get_object_or_404(Item, id=item)
-    return render(request, "dashboard/item_form.html", { "item": item })
+    categories = ItemCategory.objects.all()
+    return render(request, "dashboard/item_form.html", { "item": item, "categories": categories })
     
 def intro(request):
     """

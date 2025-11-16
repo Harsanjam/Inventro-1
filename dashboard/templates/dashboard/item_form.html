@@ -24,12 +24,14 @@
               </p>
 
               <form class="row g-3 add-item-form">
+                {% csrf_token %}
                 <div class="col-md-6">
                   <label class="form-label">Item Name *</label>
                   <input
                     class="form-control"
                     placeholder="Wireless Mouse"
                     value="{% if item %}{{ item.name }}{% endif %}"
+                    name="name"
                     required
                   />
                 </div>
@@ -39,18 +41,20 @@
                     class="form-control"
                     placeholder="ELEC-WM-001"
                     value="{% if item %}{{ item.sku }}{% endif %}"
+                    name="sku"
                     required
                   />
                 </div>
 
                 <div class="col-md-6">
                   <label class="form-label">Category *</label>
-                  <select class="form-select" required>
-                    <option value="" selected disabled>Select category</option>
-                    <option>Electronics</option>
-                    <option>Accessories</option>
-                    <option>Furniture</option>
-                    <option>Office</option>
+                  <select
+                  class="form-select"
+                  name="category"
+                  required>
+                    {% for category in categories %}
+                      <option value="{{ category.id }}" {% if item.category.name == category.name %}selected="selected"{% endif %}>{{ category.name }}</option>
+                    {% endfor %}
                   </select>
                 </div>
                 <div class="col-md-6">
@@ -59,6 +63,7 @@
                     class="form-control"
                     placeholder="Warehouse A - Shelf 12"
                     value="{% if item %}{{ item.location }}{% endif %}"
+                    name="location"
                     required
                   />
                 </div>
@@ -70,6 +75,7 @@
                     class="form-control"
                     placeholder="100"
                     value="{% if item %}{{ item.in_stock }}{% endif %}"
+                    name="quantity"
                     required
                   />
                 </div>
@@ -80,6 +86,7 @@
                     class="form-control"
                     placeholder="20"
                     value="{% if item %}{{ item.in_stock }}{% endif %}"
+                    name="min_quantity"
                     required
                   />
                 </div>
@@ -92,6 +99,7 @@
                     class="form-control"
                     placeholder="24.99"
                     value="{% if item %}{{ item.cost }}{% endif %}"
+                    name="cost"
                     required
                   />
                 </div>
@@ -101,14 +109,18 @@
                     class="form-control"
                     rows="3"
                     placeholder="Enter item description..."
+                    name="description"
                   ></textarea>
                 </div>
 
                 <div class="col-12 d-flex gap-2">
                   <button class="btn btn-primary">Add Item</button>
-                  <a class="btn btn-outline-secondary" href="inventory.html"
+                  {% comment %} <button class="btn btn-primary" onclick="patch_item">Add Item</button> {% endcomment %}
+                  {% if item %}
+                  <a class="btn btn-outline-secondary" href="{% url 'dashboard_inventory' %}"
                     >Cancel</a
                   >
+                  {% endif %}
                 </div>
               </form>
             </div>
@@ -117,9 +129,43 @@
       </main>
     </div>
 
+    <script>
+      document.querySelector(".add-item-form").addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        const updateUrl = "{% url "item-list" %}" + {{ item.id }} + "/";
+        const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value;
+        let item = {
+          name: document.querySelector("input[name='name']").value,
+          sku: document.querySelector("input[name='sku']").value,
+          category: document.querySelector("select[name='category']").value,
+          location: document.querySelector("input[name='location']").value,
+          quantity: document.querySelector("input[name='quantity']").value,
+          min_quantity: document.querySelector("input[name='min_quantity']").value,
+          price: document.querySelector("input[name='cost']").value,
+          description: document.querySelector("textarea[name='description']").value
+        };
+
+        fetch(updateUrl, {
+          method: "PATCH",
+          headers: {
+            "Content-type": "application/json; charset=UTF-8",
+            "Accept": "application/json",
+            "X-CSRFToken": csrfToken
+          },
+          body: JSON.stringify(item)
+        }).then((response) => {
+            alert("Item updated successfully");
+            window.location.href = "{% url "dashboard_inventory" %}"
+        }).then((data) => {
+          console.log("Error: ", data)
+        });
+    });
+
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <script src="{% static 'dashboard/api.js' %}"></script>
     <script src="{% static 'dashboard/ui.js' %}"></script>
     <script src="{% static 'dashboard/app.js' %}"></script>
-{% endblock %}
+{% endblock %}                      <option {% if item.category.name == category.name %}selected="selected"{% endif %}>{{ category.name }}</option>
