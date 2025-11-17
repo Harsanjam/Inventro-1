@@ -1,9 +1,13 @@
 import pandas as pd
 import psycopg
 import os
-# from dotenv import load_dotenv
-# load_dotenv()
+from datetime import datetime
+from dotenv import load_dotenv
+load_dotenv()
 
+def parse_cost(cost: str) -> float:
+    cleaned_amount = cost.replace('$', '').replace(',', '')
+    return float(cleaned_amount)
 
 def populate_item_category(cur: psycopg.Cursor,file_path: str) :
     insert_query = """
@@ -16,13 +20,14 @@ def populate_item_category(cur: psycopg.Cursor,file_path: str) :
 
 def populate_item(cur: psycopg.Cursor,file_path: str) :
     insert_query = """
-        INSERT INTO inventory_item (name, "SKU", in_stock, total_amount, category_id) 
-        VALUES (%s, %s, %s, %s, %s)
+        INSERT INTO inventory_item (name, sku, in_stock, total_amount, cost, category_id, location, created_at, updated_at) 
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     memo = {}
     df = pd.read_csv(file_path)
-    for (id, (name, sku, total_amount, _, category)) in df.iterrows():
+    for (id, (name, sku, total_amount, cost, category, location)) in df.iterrows():
         category_id = None
+        current_time = datetime.now()
         if category in memo:
             category_id = memo[category]
         else:
@@ -35,13 +40,13 @@ def populate_item(cur: psycopg.Cursor,file_path: str) :
                 print(result)
                 raise ValueError(f"Category '{category}' not found in the category table.")
             
-        cur.execute(insert_query, (name, sku, total_amount, total_amount, category_id))
+        cur.execute(insert_query, (name, sku, total_amount, total_amount, parse_cost(cost), category_id, location, current_time, current_time))
 
 def scrawl_files(category_file_path, item_file_path):
     connection_parameters = {
         "host": os.getenv("POSTGRES_HOST", "localhost"),
         "port": os.getenv("POSTGRES_PORT", 5432),
-        "dbname": os.getenv("POSTGRES_DB_NAME"),
+        "dbname": os.getenv("POSTGRES_DB"),
         "user": os.getenv("POSTGRES_USER", "postgres"),
         "password": os.getenv("POSTGRES_PASSWORD")
     }
@@ -56,7 +61,7 @@ def scrawl_files(category_file_path, item_file_path):
             conn.close()
 
 if __name__ == "__main__":
-    ITEM_CAT_FILE_PATH = "./data/item_category_example.csv.csv"
+    ITEM_CAT_FILE_PATH = "./data/item_category_example.csv"
     ITEM_FILE_PATH = "./data/item_example.csv"
     scrawl_files(ITEM_CAT_FILE_PATH, ITEM_FILE_PATH)
     

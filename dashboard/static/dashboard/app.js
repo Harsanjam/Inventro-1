@@ -5,7 +5,10 @@ document.addEventListener("DOMContentLoaded", () => {
   setupInventory();
   setupAddItem();
   setupAnalytics();
-  setupDashboardCharts();
+  // Check if we're on the dashboard page
+  if (document.getElementById("inventoryTrendChart") || document.querySelector(".stat")) {
+    setupDashboard();
+  }
 });
 
 function bootstrapEnableTooltips() {
@@ -187,35 +190,109 @@ function setupAddItem() {
   });
 }
 
-/* ---- Dashboard & Analytics charts ---- */
+/* ---- Dashboard stats and charts ---- */
+async function setupDashboard() {
+  // Load dashboard stats
+  await loadDashboardStats();
+  // Load dashboard charts
+  await setupDashboardCharts();
+}
+
+async function loadDashboardStats() {
+  if (!window.InventroAPI) return;
+  
+  try {
+    const stats = await InventroAPI.getStats();
+    
+    // Update stat boxes by ID (more reliable than title matching)
+    const totalEl = document.getElementById('statTotalItems');
+    if (totalEl) totalEl.textContent = stats.total_items.toLocaleString();
+    
+    const lowStockEl = document.getElementById('statLowStock');
+    if (lowStockEl) lowStockEl.textContent = stats.low_stock.toLocaleString();
+    
+    const outOfStockEl = document.getElementById('statOutOfStock');
+    if (outOfStockEl) outOfStockEl.textContent = stats.out_of_stock.toLocaleString();
+    
+    const valueEl = document.getElementById('statInventoryValue');
+    if (valueEl) {
+      const value = stats.inventory_value;
+      if (value >= 1000) {
+        valueEl.textContent = `$${(value / 1000).toFixed(1)}k`;
+      } else {
+        valueEl.textContent = `$${value.toFixed(0)}`;
+      }
+    }
+    
+    const newItemsEl = document.getElementById('statNewItems');
+    if (newItemsEl) newItemsEl.textContent = stats.new_items_7d.toLocaleString();
+    
+    const vendorsEl = document.getElementById('statVendors');
+    if (vendorsEl) vendorsEl.textContent = stats.categories.toLocaleString();
+  } catch (e) {
+    console.warn("Failed to load dashboard stats", e);
+  }
+}
+
 async function setupDashboardCharts() {
-  const elTrend = document.getElementById("inventoryTrend");
-  const elCat = document.getElementById("itemsByCategory");
+  const elTrend = document.getElementById("inventoryTrendChart");
+  const elCat = document.getElementById("itemsByCategoryChart");
   if (!elTrend && !elCat) return;
+  
+  if (!window.InventroAPI || !window.Chart) return;
+  
   try {
     const m = await InventroAPI.getMetrics();
-    if (elTrend && window.Chart) {
-      new Chart(elTrend, {
-        type: "bar",
+    
+    if (elTrend) {
+      // Destroy existing chart if it exists
+      if (window.inventoryTrendChart) {
+        window.inventoryTrendChart.destroy();
+      }
+      window.inventoryTrendChart = new Chart(elTrend, {
+        type: "line",
         data: {
           labels: m.inventoryTrend.labels,
-          datasets: [{ label: "Items", data: m.inventoryTrend.data }],
+          datasets: [{ 
+            label: "Total Items",
+            data: m.inventoryTrend.data,
+            fill: false,
+            tension: 0.35
+          }],
         },
         options: {
           responsive: true,
           plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true } },
+          scales: { 
+            y: { beginAtZero: false, grid: { color: 'rgba(0,0,0,0.05)' } },
+            x: { grid: { display: false } }
+          },
         },
       });
     }
-    if (elCat && window.Chart) {
-      new Chart(elCat, {
-        type: "pie",
+    
+    if (elCat) {
+      // Destroy existing chart if it exists
+      if (window.itemsByCategoryChart) {
+        window.itemsByCategoryChart.destroy();
+      }
+      window.itemsByCategoryChart = new Chart(elCat, {
+        type: "bar",
         data: {
           labels: m.itemsByCategory.labels,
-          datasets: [{ data: m.itemsByCategory.data }],
+          datasets: [{ 
+            label: "Items",
+            data: m.itemsByCategory.data
+          }],
         },
-        options: { responsive: true },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: { 
+            y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+            x: { grid: { display: false } }
+          },
+        },
       });
     }
   } catch (e) {
@@ -227,27 +304,49 @@ async function setupAnalytics() {
   const elStatus = document.getElementById("statusTrends");
   const elValue = document.getElementById("valueOverTime");
   if (!elStatus && !elValue) return;
+  
+  if (!window.InventroAPI || !window.Chart) return;
+  
   try {
     const m = await InventroAPI.getMetrics();
-    if (elStatus && window.Chart) {
-      new Chart(elStatus, {
+    
+    if (elStatus) {
+      // Destroy existing chart if it exists
+      if (window.statusTrendsChart) {
+        window.statusTrendsChart.destroy();
+      }
+      window.statusTrendsChart = new Chart(elStatus, {
         type: "line",
         data: {
           labels: m.statusTrends.labels,
-          datasets: (m.statusTrends.series || []).map((s) => ({
+          datasets: (m.statusTrends.series || []).map((s, idx) => ({
             label: s.label,
             data: s.data,
             tension: 0.3,
+            borderColor: idx === 0 ? 'rgb(75, 192, 192)' : idx === 1 ? 'rgb(255, 206, 86)' : 'rgb(255, 99, 132)',
+            backgroundColor: idx === 0 ? 'rgba(75, 192, 192, 0.1)' : idx === 1 ? 'rgba(255, 206, 86, 0.1)' : 'rgba(255, 99, 132, 0.1)',
           })),
         },
         options: {
           responsive: true,
           interaction: { mode: "nearest", intersect: false },
+          plugins: {
+            legend: { display: true, position: 'top' }
+          },
+          scales: {
+            y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+            x: { grid: { display: false } }
+          }
         },
       });
     }
-    if (elValue && window.Chart) {
-      new Chart(elValue, {
+    
+    if (elValue) {
+      // Destroy existing chart if it exists
+      if (window.valueOverTimeChart) {
+        window.valueOverTimeChart.destroy();
+      }
+      window.valueOverTimeChart = new Chart(elValue, {
         type: "line",
         data: {
           labels: m.valueOverTime.labels,
@@ -256,13 +355,35 @@ async function setupAnalytics() {
               label: "Inventory Value",
               data: m.valueOverTime.data,
               fill: true,
+              borderColor: 'rgb(75, 192, 192)',
+              backgroundColor: 'rgba(75, 192, 192, 0.2)',
+              tension: 0.4,
             },
           ],
         },
-        options: { responsive: true, plugins: { legend: { display: false } } },
+        options: { 
+          responsive: true, 
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { 
+              beginAtZero: false,
+              grid: { color: 'rgba(0,0,0,0.05)' },
+              ticks: {
+                callback: function(value) {
+                  if (value >= 1000) {
+                    return '$' + (value / 1000).toFixed(1) + 'k';
+                  }
+                  return '$' + value.toFixed(0);
+                }
+              }
+            },
+            x: { grid: { display: false } }
+          }
+        },
       });
     }
   } catch (e) {
     console.warn("Analytics metrics fallback in use", e);
   }
 }
+

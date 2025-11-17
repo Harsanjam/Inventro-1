@@ -3,7 +3,7 @@ from django.db import models
 
 
 class ItemCategory(models.Model):
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length=50, unique=True)
 
 class Item(models.Model):
     """
@@ -20,9 +20,11 @@ class Item(models.Model):
 
     name = models.CharField(max_length=255)
     
-    SKU = models.CharField(max_length=50)
+    sku = models.CharField(max_length=50)
     in_stock = models.IntegerField()
     total_amount = models.IntegerField()
+    location = models.TextField()
+    cost = models.DecimalField(max_digits=15, decimal_places=2, null=True)
     category = models.ForeignKey(
         ItemCategory,
         on_delete=models.PROTECT
