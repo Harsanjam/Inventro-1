@@ -48,3 +48,11 @@ def cart(request):
     cart_obj, _ = Cart.objects.get_or_create(user=request.user)
     cart_items = cart_obj.cart_items.select_related('item').all()
     return render(request, "cart.html", {"cart_items": cart_items, 'page_num': 1})
+
+def metrics_api(request):
+    """
+    Lightweight JSON API used by the dashboard JS to fetch
+    the same metrics that the HTML dashboard shows.
+    """
+    return JsonResponse(_metrics_dict())
+
