@@ -64,6 +64,18 @@ def inventory(request):
 
     return render(request, "dashboard/inventory.html", {"items": page_obj.object_list, "categories": categories, "page_obj": page_obj, "per_page": per_page})
 
+    # TODO: Verify deletion
+    # items = Item.objects.all()
+
+    # page_number = request.GET.get('page', 1)
+    # paginator = Paginator(items, 10)
+    # items = paginator.get_page(page_number)
+    
+    # if 'HX-Request' in request.headers:
+    #     return render(request, 'dashboard/partials/inventory_rows.html', {'items': items})
+    
+    # return render(request, "dashboard/inventory.html", {'items': items})
+
 
 def partials_inventory(request):
     """Return only the table rows for HTMX updates."""
@@ -237,8 +249,13 @@ def add_item(request):
 
     # GET or invalid POST - render template with categories and optional error
     categories = ItemCategory.objects.all()
-    return render(request, "dashboard/add_item.html", {"categories": categories, "error": error})
+    return render(request, "dashboard/item_form.html", {"categories": categories, "error": error})
 
+def edit_item(request, item):
+    item = get_object_or_404(Item, id=item)
+    categories = ItemCategory.objects.all()
+    return render(request, "dashboard/item_form.html", { "item": item, "categories": categories })
+    
 def intro(request):
     """
     Render a simple introduction/landing page.
@@ -252,8 +269,7 @@ def cart(request):
     """
     cart_obj, _ = Cart.objects.get_or_create(user=request.user)
     cart_items = cart_obj.cart_items.select_related('item').all()
-    return render(request, "cart.html", {"cart_items": cart_items})
-
+    return render(request, "cart.html", {"cart_items": cart_items, 'page_num': 1})
 
 def logout_view(request):
     """Log the user out and redirect to the login page.
@@ -271,3 +287,10 @@ def logout_view(request):
         pass
     # Redirect to the named login URL
     return redirect('login')
+def metrics_api(request):
+    """
+    Lightweight JSON API used by the dashboard JS to fetch
+    the same metrics that the HTML dashboard shows.
+    """
+    return JsonResponse(_metrics_dict())
+

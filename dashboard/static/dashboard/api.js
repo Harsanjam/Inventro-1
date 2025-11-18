@@ -122,6 +122,23 @@
     return apiFetch(`/api/items/${id}/`, { method: "DELETE" });
   }
 
+  // --- Dashboard Stats ---
+  async function getStats() {
+    try {
+      return await apiFetch("/api/stats/");
+    } catch (e) {
+      console.warn("Stats API error, using fallback", e);
+      return {
+        total_items: 0,
+        low_stock: 0,
+        out_of_stock: 0,
+        inventory_value: 0,
+        new_items_7d: 0,
+        categories: 0,
+      };
+    }
+  }
+
   // --- Metrics (Analytics) ---
   async function getMetrics() {
     // Expect backend to provide computed metrics
@@ -129,6 +146,7 @@
     try {
       return await apiFetch("/api/metrics/");
     } catch (e) {
+      console.warn("Metrics API error, using fallback", e);
       return {
         inventoryTrend: {
           labels: ["Jan", "Feb", "Mar", "Apr", "May"],
@@ -170,6 +188,8 @@
     updateItem,
     patchItem,
     deleteItem,
+    getStats,
     getMetrics,
   };
 })(window);
+
