@@ -15,11 +15,13 @@ spec:
     spec:
       containers:
         - name: inventro-web
-          image: registry.digitalocean.com/${DOCR_REGISTRY}/inventro-web:latest
-          imagePullPolicy: IfNotPresent
+          image: registry.digitalocean.com/inventro-registry/inventro-web:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000
           env:
+            - name: GUNICORN_CMD_ARGS
+              value: "--access-logfile - --error-logfile -"
             - name: DJANGO_SECRET_KEY
               valueFrom:
                 secretKeyRef:
@@ -35,10 +37,10 @@ spec:
                 name: inventro-db-config
           resources:
             requests:
-              cpu: "50m"
+              cpu: "100m"
               memory: "256Mi"
             limits:
-              cpu: "100m"
+              cpu: "200m"
               memory: "512Mi"
 
       imagePullSecrets:

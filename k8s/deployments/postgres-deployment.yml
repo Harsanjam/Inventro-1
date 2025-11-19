@@ -14,7 +14,7 @@ spec:
         app: inventro-postgres
     spec:
       containers:
-        - name: inventro-postgres-container
+        - name: postgres-pvc
           image: postgres:15
           env:
             - name: POSTGRES_PASSWORD
