@@ -12,9 +12,8 @@ from django.http import JsonResponse
 from inventory.serializers import ItemSerializer
 import json
 
-def index(request):
-    # Original dashboard page
-    return render(request, "dashboard/index.html")
+def dashboard_home(request):
+    return render(request, "dashboard/home.html")
 
 def inventory(request):
     items = Item.objects.all()

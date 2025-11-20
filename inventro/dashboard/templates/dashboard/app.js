@@ -18,27 +18,6 @@ function bootstrapEnableTooltips() {
     .forEach((el) => new bootstrap.Tooltip(el));
 }
 
-/* ---- Login page ---- */
-function setupLogin() {
-  const form = document.querySelector(
-    'form[action="index.html"], form#loginForm'
-  );
-  if (!form || !window.InventroAPI) return;
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const email = form.querySelector('input[type="email"]').value.trim();
-    const password = form.querySelector('input[type="password"]').value;
-    try {
-      await InventroAPI.login(email, password);
-      InventroUI.toast("Signed in successfully", "success");
-      window.location.href = "index.html";
-    } catch (err) {
-      InventroUI.toast("Login failed. Check credentials.", "danger", 5000);
-      console.error(err);
-    }
-  });
-}
-
 /* ---- Inventory page ---- */
 async function setupInventory() {
   const tableBody = document.getElementById("tableBody");

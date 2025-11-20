@@ -8,13 +8,13 @@ from . import views
 #  * cart     – user’s cart (requires login)
 #  * login    – built‑in login view with a custom template
 urlpatterns = [
-    path('dashboard/', views.index, name='dashboard_home'),
-    path('inventory', views.inventory, name='dashboard_inventory'),
+    path('dashboard/', views.dashboard_home, name='dashboard_home'),
+    path('inventory/', views.inventory, name='dashboard_inventory'),
     path('partials/inventory', views.partials_inventory, name='partials_inventory'),
-    path('analytics', views.analytics, name='dashboard_analytics'),
+    path('analytics/', views.analytics, name='dashboard_analytics'),
     path('inventory/delete/<int:pk>/', views.delete_item, name='inventory_delete'),
     # TODO: MERGE EDIT_ITEM AND ADD_ITEM
-    path('item', views.add_item, name='dashboard_add_item'),
+    path('item/', views.add_item, name='dashboard_add_item'),
     path('item/<int:item>', views.edit_item, name='dashboard_edit_item'),
     path('cart', views.cart, name='cart'),
     path('logout', views.logout_view, name='logout'),

@@ -13,20 +13,26 @@
       </div>
 
       <nav class="menu">
-        <div class="menu-heading">Main</div>
-        <a class="menu-link active" href="/dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a>
-        <a class="menu-link" href="/inventory"><i class="bi bi-archive"></i> Inventory</a>
+        <div>
+          <div class="menu-heading">Main</div>
+          <a class="menu-link {% if request.path == '/dashboard/' %}active{% endif %}" href="/dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a>
+          <a class="menu-link {% if request.path == '/inventory/' %}active{% endif %}" href="/inventory"><i class="bi bi-archive"></i> Inventory</a>
+        </div>
 
         {# Only staff / admins can see Add Item #}
-        {% if user.is_authenticated %}
-          {% if user.is_staff or user.is_superuser %}
-            <a class="menu-link" href="/item"><i class="bi bi-plus-circle"></i> Add Item</a>
-          {% endif %}
+        {% if user.is_staff or user.is_superuser %}
+          <div>
+            <div class="menu-heading">Staff</div>
+            <a class="menu-link {% if request.path == '/item/' %}active{% endif %}" href="/item"><i class="bi bi-plus-circle"></i> Add Item</a>
+          </div>
         {% endif %}
-
+        
         {# Only admins can see Analytics #}
-        {% if user.is_authenticated and user.is_superuser %}
-          <a class="menu-link" href="/analytics"><i class="bi bi-graph-up"></i> Analytics</a>
+        {% if user.is_superuser %}
+          <div>
+            <div class="menu-heading">Admin</div>
+            <a class="menu-link {% if request.path == '/analytics/' %}active{% endif %}" href="/analytics"><i class="bi bi-graph-up"></i> Analytics</a>
+          </div>
         {% endif %}
       </nav>
 
