@@ -14,7 +14,6 @@ urlpatterns = [
     path('item/', views.item_form, name='dashboard_add_item'),
     path('item/<int:item>', views.item_form, name='dashboard_edit_item'),
     
-    path('partials/inventory', views.partials_inventory, name='partials_inventory'),
     path('inventory/delete/<int:pk>/', views.delete_item, name='inventory_delete'),
     path('cart', views.cart, name='cart'),
 ]

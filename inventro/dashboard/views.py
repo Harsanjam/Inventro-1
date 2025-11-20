@@ -8,8 +8,6 @@ from django.db import models
 from django.db.models import F, ExpressionWrapper
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import JsonResponse
-from inventory.serializers import ItemSerializer
-import json
 
 @login_required
 def home(request):
@@ -17,67 +15,20 @@ def home(request):
 
 @login_required
 def inventory(request):
-    items = Item.objects.all()
+    categories = ItemCategory.objects.all()
+    items = filter_items(request)
+    print(items)
 
-    page_number = request.GET.get('page', 1)
-    paginator = Paginator(items, 10)
+    per_page = get_pos_int_parameter('per_page', request, 10)
+    page_number = get_pos_int_parameter('page', request, 1)
+
+    paginator = Paginator(items, per_page)
     items = paginator.get_page(page_number)
-    
+        
     if 'HX-Request' in request.headers:
-        return render(request, 'dashboard/partials/inventory_rows.html', {'items': items})
+        return render(request, 'dashboard/partials/inventory_rows.html', {'items': items, "categories": categories,})
     
-    return render(request, "dashboard/inventory.html", {'items': items})
-
-    # # Inventory overview page - provide items and categories for dynamic rendering
-    # items = Item.objects.select_related('category').filter(is_active=True)
-    # categories = ItemCategory.objects.all()
-
-    # # Basic filtering from query params (used by the template/HTMX)
-    # q = (request.GET.get('q') or '').strip()
-    # status = request.GET.get('status')
-    # category = request.GET.get('category')
-    # # pagination
-    # try:
-    #     per_page = int(request.GET.get('per_page', 10))
-    #     if per_page <= 0:
-    #         per_page = 10
-    # except (ValueError, TypeError):
-    #     per_page = 10
-    # try:
-    #     page_number = int(request.GET.get('page', 1))
-    #     if page_number <= 0:
-    #         page_number = 1
-    # except (ValueError, TypeError):
-    #     page_number = 1
-
-    # if q:
-    #     items = items.filter(models.Q(name__icontains=q) | models.Q(SKU__icontains=q))
-
-    # if category:
-    #     # category comes as a name in the front-end
-    #     items = items.filter(category__name__iexact=category)
-
-    # if status == 'in':
-    #     items = items.filter(in_stock__gt=0)
-    # elif status == 'out':
-    #     items = items.filter(in_stock=0)
-    # elif status == 'low':
-    #     # low if in_stock is less than total_amount
-    #     items = items.filter(in_stock__lt=F('total_amount'))
-    # # compute total value per item (price * in_stock)
-    # # Use models.DecimalField here to avoid import-name issues
-    # value_expr = ExpressionWrapper(F('price') * F('in_stock'), output_field=models.DecimalField(max_digits=20, decimal_places=2))
-    # items = items.annotate(value=value_expr)
-
-    # # apply pagination
-    # paginator = Paginator(items, per_page)
-    # try:
-    #     page_obj = paginator.page(page_number)
-    # except (EmptyPage, PageNotAnInteger):
-    #     page_obj = paginator.page(1)
-
-    # return render(request, "dashboard/inventory.html", {"items": page_obj.object_list, "categories": categories, "page_obj": page_obj, "per_page": per_page})
-
+    return render(request, "dashboard/inventory.html", {'items': items, "categories": categories,})
 
 def analytics(request):
     # Analytics overview page
@@ -158,10 +109,15 @@ def item_form(request, item=None):
 
 ###############################################################################################################
 
-def partials_inventory(request):
-    """Return only the table rows for HTMX updates."""
-    # Mirror the filtering + pagination logic from `inventory` so the partial
-    # returns both rows and the updated pagination controls together.
+def get_pos_int_parameter(param_name: str, request, default: int) -> int:
+    param = default
+    try:
+        param = int(request.GET.get(param_name, default))
+        param = default if param > 0 else param
+    finally:
+        return param
+
+def filter_items(request):
     items = Item.objects.select_related('category').filter(is_active=True)
 
     q = (request.GET.get('q') or '').strip()
@@ -180,34 +136,11 @@ def partials_inventory(request):
         items = items.filter(in_stock=0)
     elif status == 'low':
         items = items.filter(in_stock__lt=F('total_amount'))
-
+        
     # compute value as in the full view
     value_expr = ExpressionWrapper(F('price') * F('in_stock'), output_field=models.DecimalField(max_digits=20, decimal_places=2))
     items = items.annotate(value=value_expr)
-
-    # pagination params for partials
-    try:
-        per_page = int(request.GET.get('per_page', 10))
-        if per_page <= 0:
-            per_page = 10
-    except (ValueError, TypeError):
-        per_page = 10
-    try:
-        page_number = int(request.GET.get('page', 1))
-        if page_number <= 0:
-            page_number = 1
-    except (ValueError, TypeError):
-        page_number = 1
-
-    paginator = Paginator(items, per_page)
-    try:
-        page_obj = paginator.page(page_number)
-    except (EmptyPage, PageNotAnInteger):
-        page_obj = paginator.page(1)
-
-    # Return the full inventory-area (table rows + pagination) so HTMX
-    # updates keep pagination and active page in sync.
-    return render(request, "dashboard/partials/inventory_area.html", {"items": page_obj.object_list, "page_obj": page_obj, "per_page": per_page})
+    return items
 
 
 @login_required
