@@ -8,7 +8,9 @@
   const DEFAULT_BASE = (
     window.INVENTRO_API_BASE ||
     localStorage.getItem("API_BASE") ||
-    (typeof window !== 'undefined' && window.location ? window.location.origin : "http://localhost:8000")
+    (typeof window !== "undefined" && window.location
+      ? window.location.origin
+      : "http://localhost:8000")
   ).replace(/\/+$/, "");
 
   const state = {
@@ -192,4 +194,3 @@
     getMetrics,
   };
 })(window);
-
