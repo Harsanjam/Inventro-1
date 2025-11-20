@@ -16,7 +16,5 @@ urlpatterns = [
     
     path('partials/inventory', views.partials_inventory, name='partials_inventory'),
     path('inventory/delete/<int:pk>/', views.delete_item, name='inventory_delete'),
-    # TODO: MERGE EDIT_ITEM AND ADD_ITEM
     path('cart', views.cart, name='cart'),
-    path('post_item', views.post_item, name="post_item")
 ]

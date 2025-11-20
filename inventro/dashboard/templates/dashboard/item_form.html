@@ -146,14 +146,14 @@
           updateUrl = "{% url 'item-list' %}" + "{{ item.id }}" + "/";
           method = "PATCH";
         {% else %}
-          updateUrl = "{% url 'post_item' %}";
+          updateUrl = "{% url 'item-list' %}";
           method = "POST";
         {% endif %}
 
         let item = {
           name: document.querySelector("input[name='name']").value,
           sku: document.querySelector("input[name='sku']").value,
-          category: document.querySelector("select[name='category']").value,
+          category_id: document.querySelector("select[name='category']").value,
           location: document.querySelector("input[name='location']").value,
           in_stock: document.querySelector("input[name='in_stock']").value,
           total_amount: document.querySelector("input[name='in_stock']").value,

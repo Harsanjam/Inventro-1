@@ -263,20 +263,6 @@ def delete_item(request, pk):
     # GET: show a simple confirmation template if you want one.
     return render(request, "dashboard/confirm_delete.html", {"item": item})
 
-def post_item(request):
-    data = json.loads(request.body)
-    data["category_id"] = int(data["category"])
-    
-    serializer = ItemSerializer(data=data)
-    
-    if serializer.is_valid():
-        serializer.save()
-        
-        return JsonResponse(serializer.data, status=201)
-    else:
-        return JsonResponse(serializer.errors, status=400)
-
-
 @login_required
 def cart(request):
     """
