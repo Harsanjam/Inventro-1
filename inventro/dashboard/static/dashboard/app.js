@@ -5,41 +5,18 @@ document.addEventListener("DOMContentLoaded", () => {
   setupInventory();
   setupAddItem();
   setupAnalytics();
-  // Check if we're on the dashboard page
-  if (
-    document.getElementById("inventoryTrendChart") ||
-    document.querySelector(".stat")
-  ) {
-    setupDashboard();
-  }
+  setupDashboard();
 });
+
+const REFRESH_MS = 10000; // 10s live refresh
+let dashboardInterval = null;
+let analyticsInterval = null;
 
 function bootstrapEnableTooltips() {
   if (!window.bootstrap) return;
   document
     .querySelectorAll('[data-bs-toggle="tooltip"]')
     .forEach((el) => new bootstrap.Tooltip(el));
-}
-
-/* ---- Login page ---- */
-function setupLogin() {
-  const form = document.querySelector(
-    'form[action="index.html"], form#loginForm'
-  );
-  if (!form || !window.InventroAPI) return;
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const email = form.querySelector('input[type="email"]').value.trim();
-    const password = form.querySelector('input[type="password"]').value;
-    try {
-      await InventroAPI.login(email, password);
-      InventroUI.toast("Signed in successfully", "success");
-      window.location.href = "index.html";
-    } catch (err) {
-      InventroUI.toast("Login failed. Check credentials.", "danger", 5000);
-      console.error(err);
-    }
-  });
 }
 
 /* ---- Inventory page ---- */
@@ -195,39 +172,39 @@ function setupAddItem() {
 
 /* ---- Dashboard stats and charts ---- */
 async function setupDashboard() {
-  // Load dashboard stats
+  const onDashboard =
+    document.getElementById("inventoryTrendChart") ||
+    document.getElementById("itemsByCategoryChart") ||
+    document.querySelector(".stat");
+  if (!onDashboard || !window.InventroAPI) return;
+
   await loadDashboardStats();
-  // Load dashboard charts
   await setupDashboardCharts();
 
-  // Set up polling to refresh dashboard data every 10 seconds
-  if (window.dashboardPollInterval) {
-    clearInterval(window.dashboardPollInterval);
-  }
-  window.dashboardPollInterval = setInterval(async () => {
+  if (dashboardInterval) clearInterval(dashboardInterval);
+  dashboardInterval = setInterval(async () => {
     await loadDashboardStats();
-    await setupDashboardCharts();
-  }, 10000); // Refresh every 10 seconds
+    await setupDashboardCharts(true);
+  }, REFRESH_MS);
 }
 
 async function loadDashboardStats() {
   if (!window.InventroAPI) return;
-
+  
   try {
     const stats = await InventroAPI.getStats();
-
+    
     // Update stat boxes by ID (more reliable than title matching)
-    const totalEl = document.getElementById("statTotalItems");
+    const totalEl = document.getElementById('statTotalItems');
     if (totalEl) totalEl.textContent = stats.total_items.toLocaleString();
-
-    const lowStockEl = document.getElementById("statLowStock");
+    
+    const lowStockEl = document.getElementById('statLowStock');
     if (lowStockEl) lowStockEl.textContent = stats.low_stock.toLocaleString();
-
-    const outOfStockEl = document.getElementById("statOutOfStock");
-    if (outOfStockEl)
-      outOfStockEl.textContent = stats.out_of_stock.toLocaleString();
-
-    const valueEl = document.getElementById("statInventoryValue");
+    
+    const outOfStockEl = document.getElementById('statOutOfStock');
+    if (outOfStockEl) outOfStockEl.textContent = stats.out_of_stock.toLocaleString();
+    
+    const valueEl = document.getElementById('statInventoryValue');
     if (valueEl) {
       const value = stats.inventory_value;
       if (value >= 1000) {
@@ -236,28 +213,27 @@ async function loadDashboardStats() {
         valueEl.textContent = `$${value.toFixed(0)}`;
       }
     }
-
-    const newItemsEl = document.getElementById("statNewItems");
-    if (newItemsEl)
-      newItemsEl.textContent = stats.new_items_7d.toLocaleString();
-
-    const vendorsEl = document.getElementById("statVendors");
+    
+    const newItemsEl = document.getElementById('statNewItems');
+    if (newItemsEl) newItemsEl.textContent = stats.new_items_7d.toLocaleString();
+    
+    const vendorsEl = document.getElementById('statVendors');
     if (vendorsEl) vendorsEl.textContent = stats.categories.toLocaleString();
   } catch (e) {
     console.warn("Failed to load dashboard stats", e);
   }
 }
 
-async function setupDashboardCharts() {
+async function setupDashboardCharts(isRefresh = false) {
   const elTrend = document.getElementById("inventoryTrendChart");
   const elCat = document.getElementById("itemsByCategoryChart");
   if (!elTrend && !elCat) return;
-
+  
   if (!window.InventroAPI || !window.Chart) return;
-
+  
   try {
     const m = await InventroAPI.getMetrics();
-
+    
     if (elTrend) {
       // Destroy existing chart if it exists
       if (window.inventoryTrendChart) {
@@ -267,26 +243,24 @@ async function setupDashboardCharts() {
         type: "line",
         data: {
           labels: m.inventoryTrend.labels,
-          datasets: [
-            {
-              label: "Total Items",
-              data: m.inventoryTrend.data,
-              fill: false,
-              tension: 0.35,
-            },
-          ],
+          datasets: [{ 
+            label: "Total Items",
+            data: m.inventoryTrend.data,
+            fill: false,
+            tension: 0.35
+          }],
         },
         options: {
           responsive: true,
           plugins: { legend: { display: false } },
-          scales: {
-            y: { beginAtZero: false, grid: { color: "rgba(0,0,0,0.05)" } },
-            x: { grid: { display: false } },
+          scales: { 
+            y: { beginAtZero: false, grid: { color: 'rgba(0,0,0,0.05)' } },
+            x: { grid: { display: false } }
           },
         },
       });
     }
-
+    
     if (elCat) {
       // Destroy existing chart if it exists
       if (window.itemsByCategoryChart) {
@@ -296,19 +270,17 @@ async function setupDashboardCharts() {
         type: "bar",
         data: {
           labels: m.itemsByCategory.labels,
-          datasets: [
-            {
-              label: "Items",
-              data: m.itemsByCategory.data,
-            },
-          ],
+          datasets: [{ 
+            label: "Items",
+            data: m.itemsByCategory.data
+          }],
         },
         options: {
           responsive: true,
           plugins: { legend: { display: false } },
-          scales: {
-            y: { beginAtZero: true, grid: { color: "rgba(0,0,0,0.05)" } },
-            x: { grid: { display: false } },
+          scales: { 
+            y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+            x: { grid: { display: false } }
           },
         },
       });
@@ -322,107 +294,95 @@ async function setupAnalytics() {
   const elStatus = document.getElementById("statusTrends");
   const elValue = document.getElementById("valueOverTime");
   if (!elStatus && !elValue) return;
+  if (!window.InventroAPI) return;
 
+  // initial
+  await loadAnalyticsCharts(elStatus, elValue);
+
+  if (analyticsInterval) clearInterval(analyticsInterval);
+  analyticsInterval = setInterval(() => loadAnalyticsCharts(elStatus, elValue), REFRESH_MS);
+}
+
+async function loadAnalyticsCharts(elStatus, elValue) {
+  if (!elStatus && !elValue) return;
   if (!window.InventroAPI || !window.Chart) return;
-
-  // Function to update analytics charts
-  async function updateAnalyticsCharts() {
-    try {
-      const m = await InventroAPI.getMetrics();
-
-      if (elStatus) {
-        // Destroy existing chart if it exists
-        if (window.statusTrendsChart) {
-          window.statusTrendsChart.destroy();
-        }
-        window.statusTrendsChart = new Chart(elStatus, {
-          type: "line",
-          data: {
-            labels: m.statusTrends.labels,
-            datasets: (m.statusTrends.series || []).map((s, idx) => ({
-              label: s.label,
-              data: s.data,
-              tension: 0.3,
-              borderColor:
-                idx === 0
-                  ? "rgb(75, 192, 192)"
-                  : idx === 1
-                  ? "rgb(255, 206, 86)"
-                  : "rgb(255, 99, 132)",
-              backgroundColor:
-                idx === 0
-                  ? "rgba(75, 192, 192, 0.1)"
-                  : idx === 1
-                  ? "rgba(255, 206, 86, 0.1)"
-                  : "rgba(255, 99, 132, 0.1)",
-            })),
-          },
-          options: {
-            responsive: true,
-            interaction: { mode: "nearest", intersect: false },
-            plugins: {
-              legend: { display: true, position: "top" },
-            },
-            scales: {
-              y: { beginAtZero: true, grid: { color: "rgba(0,0,0,0.05)" } },
-              x: { grid: { display: false } },
-            },
-          },
-        });
+  
+  try {
+    const m = await InventroAPI.getMetrics();
+    
+    if (elStatus) {
+      // Destroy existing chart if it exists
+      if (window.statusTrendsChart) {
+        window.statusTrendsChart.destroy();
       }
-
-      if (elValue) {
-        // Destroy existing chart if it exists
-        if (window.valueOverTimeChart) {
-          window.valueOverTimeChart.destroy();
-        }
-        window.valueOverTimeChart = new Chart(elValue, {
-          type: "line",
-          data: {
-            labels: m.valueOverTime.labels,
-            datasets: [
-              {
-                label: "Inventory Value",
-                data: m.valueOverTime.data,
-                fill: true,
-                borderColor: "rgb(75, 192, 192)",
-                backgroundColor: "rgba(75, 192, 192, 0.2)",
-                tension: 0.4,
-              },
-            ],
+      window.statusTrendsChart = new Chart(elStatus, {
+        type: "line",
+        data: {
+          labels: m.statusTrends.labels,
+          datasets: (m.statusTrends.series || []).map((s, idx) => ({
+            label: s.label,
+            data: s.data,
+            tension: 0.3,
+            borderColor: idx === 0 ? 'rgb(75, 192, 192)' : idx === 1 ? 'rgb(255, 206, 86)' : 'rgb(255, 99, 132)',
+            backgroundColor: idx === 0 ? 'rgba(75, 192, 192, 0.1)' : idx === 1 ? 'rgba(255, 206, 86, 0.1)' : 'rgba(255, 99, 132, 0.1)',
+          })),
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: "nearest", intersect: false },
+          plugins: {
+            legend: { display: true, position: 'top' }
           },
-          options: {
-            responsive: true,
-            plugins: { legend: { display: false } },
-            scales: {
-              y: {
-                beginAtZero: false,
-                grid: { color: "rgba(0,0,0,0.05)" },
-                ticks: {
-                  callback: function (value) {
-                    if (value >= 1000) {
-                      return "$" + (value / 1000).toFixed(1) + "k";
-                    }
-                    return "$" + value.toFixed(0);
-                  },
-                },
-              },
-              x: { grid: { display: false } },
-            },
-          },
-        });
-      }
-    } catch (e) {
-      console.warn("Analytics metrics fallback in use", e);
+          scales: {
+            y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+            x: { grid: { display: false } }
+          }
+        },
+      });
     }
+    
+    if (elValue) {
+      // Destroy existing chart if it exists
+      if (window.valueOverTimeChart) {
+        window.valueOverTimeChart.destroy();
+      }
+      window.valueOverTimeChart = new Chart(elValue, {
+        type: "line",
+        data: {
+          labels: m.valueOverTime.labels,
+          datasets: [
+            {
+              label: "Inventory Value",
+              data: m.valueOverTime.data,
+              fill: true,
+              borderColor: 'rgb(75, 192, 192)',
+              backgroundColor: 'rgba(75, 192, 192, 0.2)',
+              tension: 0.4,
+            },
+          ],
+        },
+        options: { 
+          responsive: true, 
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { 
+              beginAtZero: false,
+              grid: { color: 'rgba(0,0,0,0.05)' },
+              ticks: {
+                callback: function(value) {
+                  if (value >= 1000) {
+                    return '$' + (value / 1000).toFixed(1) + 'k';
+                  }
+                  return '$' + value.toFixed(0);
+                }
+              }
+            },
+            x: { grid: { display: false } }
+          }
+        },
+      });
+    }
+  } catch (e) {
+    console.warn("Analytics metrics fallback in use", e);
   }
-
-  // Initial load
-  await updateAnalyticsCharts();
-
-  // Set up polling to refresh analytics every 10 seconds
-  if (window.analyticsPollInterval) {
-    clearInterval(window.analyticsPollInterval);
-  }
-  window.analyticsPollInterval = setInterval(updateAnalyticsCharts, 10000); // Refresh every 10 seconds
 }

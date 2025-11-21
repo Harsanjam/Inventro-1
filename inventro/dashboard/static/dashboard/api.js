@@ -8,9 +8,7 @@
   const DEFAULT_BASE = (
     window.INVENTRO_API_BASE ||
     localStorage.getItem("API_BASE") ||
-    (typeof window !== "undefined" && window.location
-      ? window.location.origin
-      : "http://localhost:8000")
+    "http://localhost:8000"
   ).replace(/\/+$/, "");
 
   const state = {
@@ -178,6 +176,10 @@
       };
     }
   }
+  // --- Activity ---
+  async function getActivity() {
+    return apiFetch("/api/activity/");
+  }
 
   window.InventroAPI = {
     state,
@@ -192,5 +194,6 @@
     deleteItem,
     getStats,
     getMetrics,
+    getActivity,
   };
 })(window);

@@ -156,7 +156,8 @@
           category_id: document.querySelector("select[name='category']").value,
           location: document.querySelector("input[name='location']").value,
           in_stock: document.querySelector("input[name='in_stock']").value,
-          total_amount: document.querySelector("input[name='in_stock']").value,
+          // Read total_amount from its own input instead of reusing in_stock
+          total_amount: document.querySelector("input[name='total_amount']").value,
           cost: document.querySelector("input[name='cost']").value,
           description: document.querySelector("textarea[name='description']").value,
         };
