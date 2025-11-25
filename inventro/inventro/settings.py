@@ -28,7 +28,7 @@ SECRET_KEY = 'django-insecure-@pynwz3x9pxe9ne_93$mg4@u5r%hr98-vok@urwf=u7o%33z=o
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['terryluan.com', "localhost", "209.38.12.56"]
+ALLOWED_HOSTS = ['terryluan.com', 'localhost', '127.0.0.1', '::1', '209.38.12.56']
 CSRF_TRUSTED_ORIGINS = ['https://terryluan.com', 'http://209.38.12.56', 'http://localhost:9944', 'http://localhost:8000']
 
 LOGIN_REDIRECT_URL = "{% dashboard_home %}"
@@ -159,3 +159,9 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels.layers.InMemoryChannelLayer",
     }
 }
+
+# Allow users to authenticate using either their username or email address.
+AUTHENTICATION_BACKENDS = [
+    'authentication.backends.EmailOrUsernameModelBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]

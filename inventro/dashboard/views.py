@@ -37,75 +37,97 @@ def analytics(request):
 
 @login_required
 def item_form(request, item=None):
-    if item:
-        item = get_object_or_404(Item, id=item)
-    
     categories = ItemCategory.objects.all()
+    error = None
     
-    return render(request, "dashboard/item_form.html", { "item": item, "categories": categories })
+    if item:
+        item_obj = get_object_or_404(Item, id=item)
+    else:
+        item_obj = None
     
-    # # Add items page - handle raw POST data (no ModelForm)
-    # error = None
-    # if request.method == "POST":
-    #     name = (request.POST.get("name") or "").strip()
-    #     sku = (request.POST.get("SKU") or "").strip()
-    #     category_value = request.POST.get("category")
-    #     in_stock_raw = request.POST.get("in_stock")
-    #     total_amount_raw = request.POST.get("total_amount")
-    #     location = (request.POST.get("location") or "").strip()
-    #     price_raw = request.POST.get("price")
-    #     description = (request.POST.get("description") or "").strip()
+    if request.method == "POST":
+        name = (request.POST.get("name") or "").strip()
+        sku = (request.POST.get("sku") or request.POST.get("SKU") or "").strip()
+        category_id = request.POST.get("category")
+        in_stock_raw = request.POST.get("in_stock")
+        total_amount_raw = request.POST.get("total_amount")
+        location = (request.POST.get("location") or "").strip()
+        cost_raw = request.POST.get("cost") or request.POST.get("price")
+        description = (request.POST.get("description") or "").strip()
 
-    #     # Basic validation
-    #     if not name or not sku or not category_value:
-    #         error = "Name, SKU and Category are required."
-    #     else:
-    #         # Resolve category by name only: find or create
-    #         category_value = (category_value or "").strip()
-    #         cat_obj = ItemCategory.objects.filter(name__iexact=category_value).first()
-    #         if cat_obj is None:
-    #             # create a new category with the provided name
-    #             cat_obj = ItemCategory.objects.create(name=category_value)
-    #         category_pk = cat_obj.pk
+        # Basic validation
+        if not name or not sku or not category_id:
+            error = "Name, SKU and Category are required."
+        else:
+            try:
+                category_obj = ItemCategory.objects.get(pk=category_id)
+            except (ItemCategory.DoesNotExist, ValueError):
+                error = "Invalid category selected."
+                category_obj = None
 
-    #         try:
-    #             in_stock = int(in_stock_raw) if in_stock_raw not in (None, "") else 0
-    #         except ValueError:
-    #             in_stock = 0
+            try:
+                in_stock = int(in_stock_raw) if in_stock_raw not in (None, "") else 0
+            except ValueError:
+                in_stock = 0
 
-    #         try:
-    #             total_amount = int(total_amount_raw) if total_amount_raw not in (None, "") else 0
-    #         except ValueError:
-    #             total_amount = 0
+            try:
+                total_amount = int(total_amount_raw) if total_amount_raw not in (None, "") else 0
+            except ValueError:
+                total_amount = 0
 
-    #         try:
-    #             from decimal import Decimal
-    #             price = Decimal(price_raw) if price_raw not in (None, "") else Decimal('0')
-    #         except Exception:
-    #             price = None
-    #             error = ("Invalid price value") if error is None else error
+            try:
+                from decimal import Decimal
+                cost = Decimal(cost_raw) if cost_raw not in (None, "") else Decimal('0')
+            except Exception:
+                cost = None
+                error = "Invalid price value" if error is None else error
 
-    #         # Only save if there is no error
-    #         if error is None:
-    #             # Create item using the resolved category_pk
-    #             item = Item(
-    #                 name=name,
-    #                 SKU=sku,
-    #                 category_id=category_pk,
-    #                 in_stock=in_stock,
-    #                 total_amount=total_amount,
-    #                 location=location or None,
-    #                 price=price or 0,
-    #                 description=description or None,
-    #                 created_by=request.user,
-    #                 updated_by=request.user,
-    #             )
-    #             item.save()
-    #             return redirect("dashboard_inventory")
-
-    # # GET or invalid POST - render template with categories and optional error
-    # categories = ItemCategory.objects.all()
-    # return render(request, "dashboard/item_form.html", {"categories": categories, "error": error})
+            # Only save if there is no error
+            if error is None and category_obj:
+                if item_obj:
+                    # Update existing item
+                    item_obj.name = name
+                    item_obj.sku = sku
+                    item_obj.category = category_obj
+                    item_obj.in_stock = in_stock
+                    item_obj.total_amount = total_amount
+                    item_obj.location = location or None
+                    item_obj.cost = cost or 0
+                    item_obj.description = description or None
+                    try:
+                        item_obj.updated_by = request.user
+                    except Exception:
+                        pass
+                    item_obj.save()
+                    messages.success(request, f"Item '{name}' updated successfully.")
+                else:
+                    # Create new item
+                    item_obj = Item(
+                        name=name,
+                        sku=sku,
+                        category=category_obj,
+                        in_stock=in_stock,
+                        total_amount=total_amount,
+                        location=location or None,
+                        cost=cost or 0,
+                        description=description or None,
+                    )
+                    try:
+                        item_obj.created_by = request.user
+                        item_obj.updated_by = request.user
+                    except Exception:
+                        pass
+                    item_obj.save()
+                    messages.success(request, f"Item '{name}' added successfully.")
+                
+                return redirect("dashboard_inventory")
+    
+    # GET or invalid POST - render template with categories and optional error
+    return render(request, "dashboard/item_form.html", {
+        "item": item_obj,
+        "categories": categories,
+        "error": error
+    })
 
 ###############################################################################################################
 
@@ -125,7 +147,7 @@ def filter_items(request):
     category = request.GET.get('category')
 
     if q:
-        items = items.filter(models.Q(name__icontains=q) | models.Q(SKU__icontains=q))
+        items = items.filter(models.Q(name__icontains=q) | models.Q(sku__icontains=q))
 
     if category:
         items = items.filter(category__name__iexact=category)

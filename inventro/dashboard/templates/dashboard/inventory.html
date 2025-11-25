@@ -32,9 +32,11 @@
                   <span class="input-group-text"><i class="bi bi-search"></i></span>
                   <input
                     id="searchBox"
+                    name="q"
                     type="search"
                     class="form-control"
                     placeholder="Search by name, SKU, or vendor…"
+                    value="{{ request.GET.q|default:'' }}"
                   >
                 </div>
               </div>
