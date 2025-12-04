@@ -1,4 +1,5 @@
 #!/bin/bash
+cd inventro
 
 echo "Running makemigrations..."
 python manage.py makemigrations --noinput

@@ -16,3 +16,5 @@ k8s/secrets.template.yaml
 .env.test
 .env.backup
 .env.example
+
+.venv
